@@ -1,0 +1,6 @@
+.app-gradient-bg {
+  background: radial-gradient(circle at top left, rgba(129, 140, 248, 0.28), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(45, 212, 191, 0.2), transparent 55%),
+    radial-gradient(circle at top right, rgba(248, 250, 252, 0.05), transparent 45%);
+}
+
