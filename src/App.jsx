@@ -3236,7 +3236,7 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
         <button
           type="button"
           onClick={toggleAnswer}
-          className="group relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gray-700 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
+          className="group relative inline-flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-xl bg-gray-700 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
         >
           <span className="absolute inset-0 bg-gray-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <span className="relative flex items-center gap-2">
