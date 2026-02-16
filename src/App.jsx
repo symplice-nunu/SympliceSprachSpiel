@@ -5,6 +5,50 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 const LEVELS = ['A1', 'A2', 'B1']
 const STORAGE_KEY = 'german-learning-game-progress-v1'
 
+// Category ranges [start, count] per level - used to filter flashcards by topic
+const FLASHCARD_CATEGORIES = {
+  A1: [
+    { id: 'all', name: 'All categories', start: 0, count: null },
+    { id: 'original', name: 'Basics', start: 0, count: 6 },
+    { id: 'greetings', name: 'Greetings & Politeness', start: 6, count: 50 },
+    { id: 'personal', name: 'Personal Information', start: 56, count: 60 },
+    { id: 'numbers', name: 'Numbers, Dates & Time', start: 116, count: 80 },
+    { id: 'everyday', name: 'Everyday Activities & Verbs', start: 196, count: 150 },
+    { id: 'food', name: 'Food & Drink', start: 346, count: 100 },
+    { id: 'house', name: 'House, Home & Furniture', start: 446, count: 80 },
+    { id: 'travel', name: 'Travel & Transportation', start: 526, count: 100 },
+    { id: 'nature', name: 'Nature & Weather', start: 626, count: 80 },
+  ],
+  A2: [
+    { id: 'all', name: 'All categories', start: 0, count: null },
+    { id: 'original', name: 'Basics', start: 0, count: 5 },
+    { id: 'daily', name: 'Daily Routines & Time', start: 5, count: 80 },
+    { id: 'work-edu', name: 'Work & Education', start: 85, count: 80 },
+    { id: 'health', name: 'Health & Body', start: 165, count: 80 },
+    { id: 'leisure', name: 'Leisure & Hobbies', start: 245, count: 100 },
+    { id: 'shopping', name: 'Shopping & Services', start: 345, count: 80 },
+    { id: 'relationships', name: 'Relationships & Social Life', start: 425, count: 80 },
+    { id: 'communication', name: 'Communication & Technology', start: 505, count: 70 },
+    { id: 'city', name: 'City Life & Directions', start: 575, count: 80 },
+    { id: 'past', name: 'Past Experiences & Biographical', start: 655, count: 80 },
+    { id: 'feelings', name: 'Feelings & Opinions', start: 735, count: 80 },
+  ],
+  B1: [
+    { id: 'all', name: 'All categories', start: 0, count: null },
+    { id: 'original', name: 'Basics', start: 0, count: 4 },
+    { id: 'work-career', name: 'Work & Career', start: 4, count: 80 },
+    { id: 'education', name: 'Education & Learning', start: 84, count: 70 },
+    { id: 'society', name: 'Society & Citizenship', start: 154, count: 70 },
+    { id: 'media', name: 'Media & Communication', start: 224, count: 70 },
+    { id: 'environment', name: 'Environment & Nature', start: 294, count: 70 },
+    { id: 'technology', name: 'Technology & Innovation', start: 364, count: 70 },
+    { id: 'health-med', name: 'Health & Medicine', start: 434, count: 70 },
+    { id: 'feelings-emotions', name: 'Feelings & Emotions', start: 504, count: 80 },
+    { id: 'opinions', name: 'Opinions & Arguments', start: 584, count: 80 },
+    { id: 'abstract', name: 'Abstract Concepts', start: 664, count: 80 },
+  ],
+}
+
 const WORD_SETS = {
   A1: {
     flashcards: [
@@ -2781,6 +2825,23 @@ const initialProgress = {
   ),
 }
 
+function chunkArray(arr, size) {
+  const result = []
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size))
+  }
+  return result
+}
+
+function getQuizzesForLevel(level) {
+  const quizArr = WORD_SETS[level]?.quiz ?? []
+  return chunkArray(quizArr, 7).map((questions, i) => ({
+    id: String(i + 1),
+    name: `Quiz ${i + 1}`,
+    questions,
+  }))
+}
+
 function loadProgress() {
   try {
     if (typeof window === 'undefined') return initialProgress
@@ -2898,38 +2959,93 @@ function LevelSelector({ currentLevel, onSelect }) {
 }
 
 function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange }) {
-  const cards = WORD_SETS[level].flashcards
+  const allCards = WORD_SETS[level].flashcards
+  const categories = FLASHCARD_CATEGORIES[level] ?? []
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [index, setIndex] = useState(() => (stats?.currentFlashcardIndex ?? 0))
   const [showAnswer, setShowAnswer] = useState(false)
   const [isFlipping, setIsFlipping] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [copiedExamplePart, setCopiedExamplePart] = useState(null) // { index, part: 'de'|'en' }
+
+  const copyToClipboard = useCallback((text) => {
+    if (typeof navigator?.clipboard?.writeText !== 'function') return
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }, [])
+
+  const copyExampleToClipboard = useCallback((text, exampleIdx, part) => {
+    if (typeof navigator?.clipboard?.writeText !== 'function') return
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedExamplePart({ index: exampleIdx, part })
+      setTimeout(() => setCopiedExamplePart(null), 2000)
+    }).catch(() => {})
+  }, [])
+
+  const categoryConfig = categories.find((c) => c.id === selectedCategoryId) ?? categories[0]
+  const cards = useMemo(() => {
+    if (!categoryConfig || categoryConfig.count === null) return allCards
+    const end = categoryConfig.start + categoryConfig.count
+    return allCards.slice(categoryConfig.start, Math.min(end, allCards.length))
+  }, [allCards, categoryConfig])
 
   useEffect(() => {
-    const nextIndex = stats?.currentFlashcardIndex ?? 0
-    setIndex(nextIndex)
+    setSelectedCategoryId('all')
+    setIndex(stats?.currentFlashcardIndex ?? 0)
     setShowAnswer(false)
-  }, [level, stats?.currentFlashcardIndex])
+  }, [level])
+
+  // When switching category: reset to 0 for specific category, sync from stats for "all"
+  useEffect(() => {
+    if (selectedCategoryId === 'all') {
+      const nextIndex = Math.min(stats?.currentFlashcardIndex ?? 0, allCards.length - 1)
+      setIndex(Math.max(0, nextIndex))
+    } else {
+      setIndex(0)
+    }
+    setShowAnswer(false)
+  }, [selectedCategoryId])
+
+  // Only sync index from stats when viewing "all" – don’t reset when navigating in category mode
+  useEffect(() => {
+    if (selectedCategoryId === 'all') {
+      const nextIndex = Math.min(stats?.currentFlashcardIndex ?? 0, allCards.length - 1)
+      setIndex(Math.max(0, nextIndex))
+    }
+  }, [selectedCategoryId, stats?.currentFlashcardIndex, allCards.length])
 
   useEffect(() => {
     onSeenWord()
   }, [index, onSeenWord])
 
-  const card = cards[index]
+  const safeIndex = Math.min(index, Math.max(0, cards.length - 1))
+  const card = cards[safeIndex]
+
+  if (!card) {
+    return (
+      <div className="rounded-3xl bg-gray-800 p-8 text-center text-gray-400">
+        No flashcards in this category. Try another category or level.
+      </div>
+    )
+  }
+
   const viewedCount =
     stats && typeof stats.currentFlashcardIndex === 'number'
       ? stats.currentFlashcardIndex + 1
       : stats?.flashcardsSeen ?? 0
 
+  const getGlobalIndex = (localIdx) =>
+    categoryConfig?.count === null ? localIdx : (categoryConfig?.start ?? 0) + localIdx
+
   const goNext = () => {
-    setIsFlipping(true)
-    setTimeout(() => {
-      setShowAnswer(false)
-      setIndex((i) => {
-        const next = (i + 1) % cards.length
-        if (onIndexChange) onIndexChange(next)
-        return next
-      })
-      setIsFlipping(false)
-    }, 300)
+    setShowAnswer(false)
+    setIndex((i) => {
+      const next = (i + 1) % cards.length
+      if (onIndexChange) onIndexChange(getGlobalIndex(next))
+      return next
+    })
   }
 
   const goPrevious = () => {
@@ -2938,7 +3054,7 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
       setShowAnswer(false)
       setIndex((i) => {
         const next = (i - 1 + cards.length) % cards.length
-        if (onIndexChange) onIndexChange(next)
+        if (onIndexChange) onIndexChange(getGlobalIndex(next))
         return next
       })
       setIsFlipping(false)
@@ -2969,14 +3085,63 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
           <div className={'absolute inset-0 bg-[url(\'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')] opacity-20'} />
           
           <div className="relative">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-medium text-gray-300">
-                Flashcard {index + 1}/{cards.length}
-              </span>
-              <span className="text-sm text-gray-400">Level {level}</span>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-medium text-gray-300">
+                  Flashcard {safeIndex + 1}/{cards.length}
+                </span>
+                <span className="text-sm text-gray-400">Level {level}</span>
+                {categories.length > 1 && (
+                  <select
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    className="rounded-lg border-0 bg-gray-700 px-2.5 py-1 text-xs font-medium text-gray-200 focus:ring-2 focus:ring-gray-500"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
-            <p className="mb-6 text-4xl font-bold text-white">{card.de}</p>
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+              <p className="text-4xl font-bold text-white">{card.de}</p>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(card.de)}
+                title="Copy German word"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  copied
+                    ? 'bg-green-600/30 text-green-300'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                {copied ? (
+                  <>
+                    <span aria-hidden>✓</span>
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden>⎘</span>
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+              <a
+                href={`https://translate.google.com/?sl=de&tl=en&text=${encodeURIComponent(card.de)}&op=translate`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open in Google Translate"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gray-700 px-3 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-600 hover:text-white"
+              >
+                <span aria-hidden>🌐</span>
+                <span>Translate</span>
+              </a>
+            </div>
 
             {showAnswer ? (
               <div className="space-y-4 animate-fade-in">
@@ -3012,14 +3177,57 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
                     <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                       Examples
                     </p>
-                    {card.examples.map((example, idx) => (
-                      <div key={idx} className="rounded-lg bg-gray-700/30 p-3">
-                        <p className="text-gray-200">{example.de}</p>
-                        <p className="mt-1 text-sm text-gray-400">
-                          {example.en}
-                        </p>
-                      </div>
-                    ))}
+                    {card.examples.map((example, idx) => {
+                      const deCopied = copiedExamplePart?.index === idx && copiedExamplePart?.part === 'de'
+                      const enCopied = copiedExamplePart?.index === idx && copiedExamplePart?.part === 'en'
+                      return (
+                        <div key={idx} className="rounded-lg bg-gray-700/30 p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <p className="text-gray-200 min-w-0 max-w-full">{example.de}</p>
+                            <div className="flex flex-shrink-0 flex-grow-0 items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => copyExampleToClipboard(example.de, idx, 'de')}
+                                title="Copy German example"
+                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-200 ${
+                                  deCopied
+                                    ? 'bg-green-600/30 text-green-300'
+                                    : 'bg-gray-600/80 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                }`}
+                              >
+                                {deCopied ? '✓ Copied!' : '⎘ Copy'}
+                              </button>
+                              <a
+                                href={`https://translate.google.com/?sl=de&tl=en&text=${encodeURIComponent(example.de)}&op=translate`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open German example in Google Translate"
+                                className="inline-flex items-center gap-1 rounded-lg bg-gray-600/80 px-2 py-1.5 text-xs font-medium text-gray-300 transition-all duration-200 hover:bg-gray-600 hover:text-white"
+                              >
+                                🌐 Translate
+                              </a>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+                            <p className="mt-1 min-w-0 max-w-full text-sm text-gray-400">
+                              {example.en}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => copyExampleToClipboard(example.en, idx, 'en')}
+                              title="Copy English translation"
+                              className={`flex-shrink-0 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-200 ${
+                                enCopied
+                                  ? 'bg-green-600/30 text-green-300'
+                                  : 'bg-gray-600/80 text-gray-300 hover:bg-gray-600 hover:text-white'
+                              }`}
+                            >
+                              {enCopied ? '✓ Copied!' : '⎘ Copy'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -3075,14 +3283,19 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
 }
 
 function QuizGame({ level, onAnswer, stats }) {
-  const questions = WORD_SETS[level].quiz
+  const allQuizzes = useMemo(() => getQuizzesForLevel(level), [level])
+  const [selectedQuizId, setSelectedQuizId] = useState('1')
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState('')
   const [answered, setAnswered] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [correctCount, setCorrectCount] = useState(0)
 
+  const currentQuiz = allQuizzes.find((q) => q.id === selectedQuizId) ?? allQuizzes[0]
+  const questions = currentQuiz?.questions ?? []
+
   useEffect(() => {
+    setSelectedQuizId('1')
     setIndex(0)
     setSelected('')
     setAnswered(false)
@@ -3090,10 +3303,27 @@ function QuizGame({ level, onAnswer, stats }) {
     setCorrectCount(0)
   }, [level])
 
+  useEffect(() => {
+    setIndex(0)
+    setSelected('')
+    setAnswered(false)
+    setCompleted(false)
+    setCorrectCount(0)
+  }, [selectedQuizId])
+
   const q = questions[index]
+
+  if (!q) {
+    return (
+      <div className="rounded-3xl bg-gray-800 p-8 text-center text-gray-400">
+        No quiz questions available. Try another level.
+      </div>
+    )
+  }
+
   const shuffledOptions = useMemo(
     () => [...q.options].sort(() => Math.random() - 0.5),
-    [index],
+    [index, selectedQuizId],
   )
 
   const submit = () => {
@@ -3129,13 +3359,35 @@ function QuizGame({ level, onAnswer, stats }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {allQuizzes.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-400">Select quiz:</span>
+          <div className="inline-flex gap-1.5 rounded-xl bg-gray-800/50 p-1.5 backdrop-blur-sm">
+            {allQuizzes.map((quiz) => (
+              <button
+                key={quiz.id}
+                type="button"
+                onClick={() => setSelectedQuizId(quiz.id)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                  selectedQuizId === quiz.id
+                    ? 'bg-gray-600 text-white shadow-md'
+                    : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'
+                }`}
+              >
+                {quiz.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="relative overflow-hidden rounded-3xl bg-gray-800 p-8 shadow-2xl">
         <div className={'absolute inset-0 bg-[url(\'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')] opacity-20'} />
         
         <div className="relative">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-medium text-gray-300">
-              Question {index + 1}/{questions.length}
+              {currentQuiz?.name} · Question {index + 1}/{questions.length}
             </span>
           </div>
 
