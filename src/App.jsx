@@ -3133,8 +3133,6 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
               </button>
               <a
                 href={`https://translate.google.com/?sl=de&tl=en&text=${encodeURIComponent(card.de)}&op=translate`}
-                target="_blank"
-                rel="noopener noreferrer"
                 title="Open in Google Translate"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-gray-700 px-3 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-600 hover:text-white"
               >
@@ -3199,8 +3197,6 @@ function FlashcardGame({ level, onKnownWord, onSeenWord, stats, onIndexChange })
                               </button>
                               <a
                                 href={`https://translate.google.com/?sl=de&tl=en&text=${encodeURIComponent(example.de)}&op=translate`}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 title="Open German example in Google Translate"
                                 className="inline-flex items-center gap-1 rounded-lg bg-gray-600/80 px-2 py-1.5 text-xs font-medium text-gray-300 transition-all duration-200 hover:bg-gray-600 hover:text-white"
                               >
