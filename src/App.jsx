@@ -49,6 +49,71 @@ const FLASHCARD_CATEGORIES = {
   ],
 }
 
+const SAMPLE_VIDEOS = [
+  {
+    id: 'huwi-cjPPXU',
+    title: 'German Learning – Lesson 2',
+    channel: 'German Learning Series',
+    description: 'Continue your German learning journey with this lesson from the beginner series.',
+    topic: 'Lesson 2',
+  },
+  {
+    id: 'Yaelm87PTvg',
+    title: 'German Learning – Lesson 3',
+    channel: 'German Learning Series',
+    description: 'Build on your vocabulary and grammar skills in this beginner lesson.',
+    topic: 'Lesson 3',
+  },
+  {
+    id: 'hAkxKMlYUI4',
+    title: 'German Learning – Lesson 4',
+    channel: 'German Learning Series',
+    description: 'Keep progressing with essential German words and phrases.',
+    topic: 'Lesson 4',
+  },
+  {
+    id: 'LQiHX6OY_BI',
+    title: 'German Learning – Lesson 5',
+    channel: 'German Learning Series',
+    description: 'Expand your understanding of German with this guided lesson.',
+    topic: 'Lesson 5',
+  },
+  {
+    id: 'aRlakaPVrEw',
+    title: 'German Learning – Lesson 6',
+    channel: 'German Learning Series',
+    description: 'Practice new vocabulary and useful everyday German expressions.',
+    topic: 'Lesson 6',
+  },
+  {
+    id: '9h8p08qziG0',
+    title: 'German Learning – Lesson 7',
+    channel: 'German Learning Series',
+    description: 'Strengthen your German with this structured lesson.',
+    topic: 'Lesson 7',
+  },
+  {
+    id: 'Q3eCDhwMRv8',
+    title: 'German Learning – Lesson 10',
+    channel: 'German Learning Series',
+    description: 'Take your German to the next level with this intermediate lesson.',
+    topic: 'Lesson 10',
+  },
+  {
+    id: 'MqqHc6lRQG4',
+    title: 'German Learning – Lesson 12',
+    channel: 'German Learning Series',
+    description: 'Continue building fluency with this lesson from the series.',
+    topic: 'Lesson 12',
+  },
+]
+
+const YOUTUBE_VIDEOS = {
+  A1: SAMPLE_VIDEOS,
+  A2: SAMPLE_VIDEOS,
+  B1: SAMPLE_VIDEOS,
+}
+
 const WORD_SETS = {
   A1: {
     flashcards: [
@@ -3501,6 +3566,148 @@ function QuizGame({ level, onAnswer, stats }) {
   )
 }
 
+function VideoCard({ video, onSelect }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(video)}
+      className="group flex flex-col overflow-hidden rounded-xl bg-gray-800/50 text-left transition-all duration-300 hover:scale-[1.02] hover:bg-gray-800"
+    >
+      <div className="relative aspect-video overflow-hidden bg-gray-900">
+        <img
+          src={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+          alt={video.title}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="rounded-full bg-black/50 p-4 backdrop-blur-sm">
+            <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+        <div className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs text-white">
+          {video.duration}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <span className="line-clamp-2 text-sm font-semibold leading-snug text-white">
+          {video.title}
+        </span>
+        <span className="text-xs text-gray-400">{video.channel}</span>
+        <span className="mt-1 line-clamp-2 text-xs text-gray-500">{video.description}</span>
+        <div className="mt-auto pt-2">
+          <span className="inline-block rounded-full bg-gray-700 px-2.5 py-0.5 text-xs text-gray-300">
+            {video.topic}
+          </span>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+function VideoPlayer({ video, onClose }) {
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="aspect-video">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0`}
+            title={video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="h-full w-full"
+          />
+        </div>
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-white">{video.title}</h3>
+              <p className="mt-0.5 text-sm text-gray-400">{video.channel}</p>
+              <p className="mt-2 text-sm text-gray-300">{video.description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VideosTab({ level }) {
+  const [selectedTopic, setSelectedTopic] = useState('All')
+  const [selectedVideo, setSelectedVideo] = useState(null)
+
+  const videos = YOUTUBE_VIDEOS[level]
+  const topics = ['All', ...new Set(videos.map((v) => v.topic))]
+  const filtered = selectedTopic === 'All' ? videos : videos.filter((v) => v.topic === selectedTopic)
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl bg-gray-800/30 p-6 backdrop-blur-sm">
+        <div className="mb-1 flex items-center gap-3">
+          <svg className="h-6 w-6 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+          </svg>
+          <h2 className="text-xl font-semibold text-white">Video Lessons</h2>
+        </div>
+        <p className="text-sm text-gray-400">
+          Watch curated YouTube videos for {level} level German learners. Click any video to play it.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {topics.map((topic) => (
+          <button
+            key={topic}
+            type="button"
+            onClick={() => setSelectedTopic(topic)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+              selectedTopic === topic
+                ? 'bg-gray-600 text-white'
+                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+            }`}
+          >
+            {topic}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((video) => (
+          <VideoCard key={video.id} video={video} onSelect={setSelectedVideo} />
+        ))}
+      </div>
+
+      {selectedVideo && (
+        <VideoPlayer video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+      )}
+    </div>
+  )
+}
+
 function App() {
   const { progress, updateLevel } = useGameProgress()
   const [level, setLevel] = useState('A1')
@@ -3602,25 +3809,47 @@ function App() {
                   Quiz
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('videos')}
+                className={`relative rounded-xl px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+                  activeTab === 'videos'
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {activeTab === 'videos' && (
+                  <span className="absolute inset-0 rounded-xl bg-gray-600" />
+                )}
+                <span className="relative flex items-center gap-2">
+                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                  Videos
+                </span>
+              </button>
             </div>
 
-            {activeTab === 'flashcards'
-              ? (
-                <FlashcardGame
-                  level={level}
-                  stats={currentStats}
-                  onSeenWord={handleSeenWord}
-                  onKnownWord={handleKnownWord}
-                  onIndexChange={handleFlashcardIndexChange}
-                />
-              )
-              : (
-                <QuizGame
-                  level={level}
-                  stats={currentStats}
-                  onAnswer={handleQuizAnswer}
-                />
-              )}
+            {activeTab === 'flashcards' && (
+              <FlashcardGame
+                level={level}
+                stats={currentStats}
+                onSeenWord={handleSeenWord}
+                onKnownWord={handleKnownWord}
+                onIndexChange={handleFlashcardIndexChange}
+              />
+            )}
+            {activeTab === 'quiz' && (
+              <QuizGame
+                level={level}
+                stats={currentStats}
+                onAnswer={handleQuizAnswer}
+              />
+            )}
+            {activeTab === 'videos' && (
+              <VideosTab level={level} />
+            )}
           </section>
 
           <aside className="space-y-6">
