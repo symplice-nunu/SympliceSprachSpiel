@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout.jsx'
+import NotFoundPage from './pages/NotFoundPage.jsx'
 
 const VideosPage = lazy(() => import('./pages/VideosPage.jsx'))
 const FlashcardsPage = lazy(() => import('./pages/FlashcardsPage.jsx'))
@@ -17,4 +18,5 @@ export const router = createBrowserRouter([
       { path: 'quiz', element: <QuizPage /> },
     ],
   },
+  { path: '*', element: <NotFoundPage /> },
 ])
