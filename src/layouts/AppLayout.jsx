@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { WORD_SETS } from '../data/flashcards.js'
 import { useGameProgress } from '../hooks/useGameProgress.js'
 import { calculatePercentage } from '../utils/helpers.js'
+import ErrorBoundary from '../components/ErrorBoundary.jsx'
 import LevelSelector from '../components/LevelSelector.jsx'
 import ProgressBadges from '../components/ProgressBadges.jsx'
 
@@ -103,24 +104,26 @@ function AppLayout() {
               ))}
             </nav>
 
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center rounded-3xl bg-gray-800/50 py-24">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-gray-300" />
-                </div>
-              }
-            >
-              <Outlet
-                context={{
-                  level,
-                  currentStats,
-                  handleSeenWord,
-                  handleKnownWord,
-                  handleFlashcardIndexChange,
-                  handleQuizAnswer,
-                }}
-              />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center rounded-3xl bg-gray-800/50 py-24">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-gray-300" />
+                  </div>
+                }
+              >
+                <Outlet
+                  context={{
+                    level,
+                    currentStats,
+                    handleSeenWord,
+                    handleKnownWord,
+                    handleFlashcardIndexChange,
+                    handleQuizAnswer,
+                  }}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </section>
 
           <aside className="space-y-6">
