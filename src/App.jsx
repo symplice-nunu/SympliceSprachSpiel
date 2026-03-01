@@ -1,8 +1,13 @@
-import { RouterProvider } from 'react-router-dom'
-import { router } from './router.jsx'
+import AppLayout from './layouts/AppLayout.jsx'
+import NotFoundPage from './pages/NotFoundPage.jsx'
+
+const KNOWN_PATHS = ['/', '/videos', '/flashcards', '/quiz']
 
 function App() {
-  return <RouterProvider router={router} />
+  if (!KNOWN_PATHS.includes(window.location.pathname)) {
+    return <NotFoundPage />
+  }
+  return <AppLayout />
 }
 
 export default App

@@ -1,15 +1,17 @@
-import { Suspense, useCallback, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useCallback, useState } from 'react'
 import { WORD_SETS } from '../data/flashcards.js'
 import { useGameProgress } from '../hooks/useGameProgress.js'
 import { calculatePercentage } from '../utils/helpers.js'
 import ErrorBoundary from '../components/ErrorBoundary.jsx'
 import LevelSelector from '../components/LevelSelector.jsx'
 import ProgressBadges from '../components/ProgressBadges.jsx'
+import FlashcardGame from '../components/FlashcardGame.jsx'
+import QuizGame from '../components/QuizGame.jsx'
+import VideosTab from '../components/VideosTab.jsx'
 
 const NAV_TABS = [
   {
-    to: '/videos',
+    id: 'videos',
     label: 'Videos',
     icon: (
       <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -17,13 +19,14 @@ const NAV_TABS = [
       </svg>
     ),
   },
-  { to: '/flashcards', label: 'Flashcards', icon: null },
-  { to: '/quiz', label: 'Quiz', icon: null },
+  { id: 'flashcards', label: 'Flashcards', icon: null },
+  { id: 'quiz', label: 'Quiz', icon: null },
 ]
 
 function AppLayout() {
   const { progress, updateLevel } = useGameProgress()
   const [level, setLevel] = useState('A1')
+  const [activeTab, setActiveTab] = useState('videos')
 
   const currentStats = progress.stats[level]
 
@@ -53,6 +56,30 @@ function AppLayout() {
     [level, updateLevel],
   )
 
+  function renderTab() {
+    if (activeTab === 'flashcards') {
+      return (
+        <FlashcardGame
+          level={level}
+          stats={currentStats}
+          onSeenWord={handleSeenWord}
+          onKnownWord={handleKnownWord}
+          onIndexChange={handleFlashcardIndexChange}
+        />
+      )
+    }
+    if (activeTab === 'quiz') {
+      return (
+        <QuizGame
+          level={level}
+          stats={currentStats}
+          onAnswer={handleQuizAnswer}
+        />
+      )
+    }
+    return <VideosTab level={level} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-950">
       <div className={'absolute inset-0 bg-[url(\'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.02"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')]'} />
@@ -79,50 +106,27 @@ function AppLayout() {
         <main className="grid gap-8 lg:grid-cols-[1fr,320px]">
           <section className="space-y-6">
             <nav className="flex w-full gap-2 rounded-2xl bg-gray-800/50 p-1.5 backdrop-blur-sm">
-              {NAV_TABS.map(({ to, label, icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  className={({ isActive }) =>
-                    `relative flex-1 rounded-xl py-2.5 text-sm font-medium transition-all duration-300 ${
-                      isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200'
-                    }`
-                  }
+              {NAV_TABS.map(({ id, label, icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`relative flex-1 rounded-xl py-2.5 text-sm font-medium transition-all duration-300 ${
+                    activeTab === id ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                  }`}
                 >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <span className="absolute inset-0 rounded-xl bg-gray-600" />
-                      )}
-                      <span className="relative flex items-center justify-center gap-2">
-                        {icon}
-                        {label}
-                      </span>
-                    </>
+                  {activeTab === id && (
+                    <span className="absolute inset-0 rounded-xl bg-gray-600" />
                   )}
-                </NavLink>
+                  <span className="relative flex items-center justify-center gap-2">
+                    {icon}
+                    {label}
+                  </span>
+                </button>
               ))}
             </nav>
 
             <ErrorBoundary>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center rounded-3xl bg-gray-800/50 py-24">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-gray-300" />
-                  </div>
-                }
-              >
-                <Outlet
-                  context={{
-                    level,
-                    currentStats,
-                    handleSeenWord,
-                    handleKnownWord,
-                    handleFlashcardIndexChange,
-                    handleQuizAnswer,
-                  }}
-                />
-              </Suspense>
+              {renderTab()}
             </ErrorBoundary>
           </section>
 
