@@ -1,21 +1,7 @@
-import { QUIZ_QUESTIONS_PER_SET } from '../constants.js'
-import { WORD_SETS } from '../data/flashcards.js'
-
-export function chunkArray(arr, size) {
-  const result = []
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size))
-  }
-  return result
-}
+import { QUIZZES } from '../data/quizzes.js'
 
 export function getQuizzesForLevel(level) {
-  const quizArr = WORD_SETS[level]?.quiz ?? []
-  return chunkArray(quizArr, QUIZ_QUESTIONS_PER_SET).map((questions, i) => ({
-    id: String(i + 1),
-    name: `Quiz ${i + 1}`,
-    questions,
-  }))
+  return QUIZZES[level] ?? []
 }
 
 /** Unbiased Fisher-Yates shuffle. .sort(() => Math.random() - 0.5) has statistical bias. */
