@@ -4,7 +4,7 @@ import { calculatePercentage } from '../utils/helpers.js'
 
 const ProgressBadges = memo(function ProgressBadges({ stats }) {
   return (
-    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="mt-6 grid grid-cols-1 gap-3">
       {LEVELS.map((level) => {
         const s = stats[level]
         const flashRate = calculatePercentage(s.flashcardsKnown, s.flashcardsSeen)
