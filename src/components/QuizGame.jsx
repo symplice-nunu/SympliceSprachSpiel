@@ -119,12 +119,14 @@ function QuizGame({ level, onAnswer, stats }) {
               )
             })}
           </div>
-          <span className="text-xs text-gray-500">
-            <span className="text-yellow-400">
-              <LockIcon />
-            </span>{' '}
-            = Premium
-          </span>
+          <button
+            type="button"
+            onClick={() => setShowPremium(true)}
+            className="flex items-center gap-1 text-xs text-yellow-400 underline-offset-2 hover:underline"
+          >
+            <LockIcon />
+            {lockedCount} remaining quizzes — upgrade to unlock
+          </button>
         </div>
       )}
 
@@ -156,13 +158,6 @@ function QuizGame({ level, onAnswer, stats }) {
             </button>
             <p className="text-xs text-gray-500">First 3 quizzes per level are always free</p>
           </div>
-          {showPremium && (
-            <PremiumModal
-              lockedCount={lockedCount}
-              contentLabel="quizzes"
-              onClose={() => setShowPremium(false)}
-            />
-          )}
         </div>
       ) : (
         <>
@@ -277,6 +272,14 @@ function QuizGame({ level, onAnswer, stats }) {
             </div>
           )}
         </>
+      )}
+
+      {showPremium && (
+        <PremiumModal
+          lockedCount={lockedCount}
+          contentLabel="quizzes"
+          onClose={() => setShowPremium(false)}
+        />
       )}
     </div>
   )
